@@ -404,6 +404,7 @@ let sb = null;
 
 if(ok){
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  document.getElementById('total').innerHTML = '<span style="opacity:.4">chargement...</span>';
   loadVotes();
   subscribeRT();
 }else{
@@ -415,9 +416,9 @@ if(ok){
 async function loadVotes(){
   const {data} = await sb.from('poll_votes').select('*');
   if(data){ data.forEach(r => { votes[r.option_id] = r.count; }); }
-  render();
-  updateTotal();
-  if(userVote) showConfirmMsg();
+  render();       // highlight le choix seulement APRÈS chargement Supabase
+  updateTotal();  // affiche le vrai total
+  if(userVote) showConfirmMsg(); // message seulement si déjà voté
 }
 
 function subscribeRT(){
@@ -516,8 +517,6 @@ function loop(){
   if(pp.length) requestAnimationFrame(loop);
   else cx.clearRect(0,0,cv.width,cv.height);
 }
-
-render();
 </script>
 
 <!--
