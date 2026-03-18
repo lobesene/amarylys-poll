@@ -2,7 +2,9 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#8B3020">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Sondage · After-Work Amarylys 🎭</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital@1&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -240,6 +242,9 @@ body {
   cursor: pointer; overflow: hidden;
   transition: background .2s, border-color .2s, transform .15s;
   animation: fadeUp .45s ease both;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  min-height: 56px;
 }
 .opt:hover {
   background: rgba(255,255,255,.18);
@@ -339,11 +344,37 @@ body {
 .opt:nth-child(4){animation-delay:.50s}
 .opt:nth-child(5){animation-delay:.56s}
 
-@media(max-width:440px){
-  .brand-script{font-size:3.8rem}
-  .after-work{font-size:2.4rem}
-  .info-strip{flex-direction:column;gap:.7rem}
-  .isep{display:none}
+/* ── Mobile ── */
+@media(max-width:480px){
+  body { padding: 1rem 0.75rem 3rem; }
+
+  .wrap { max-width: 100%; }
+
+  .hcard { padding: 1.5rem 1.25rem 1.1rem; border-radius: 18px 18px 0 0; }
+  .brand-script { font-size: 3.6rem; }
+  .after-work   { font-size: 2.4rem; }
+  .date-box     { font-size: 1.5rem; padding: 5px 12px; }
+
+  .info-strip   { flex-direction: column; gap: 0.75rem; padding: 1rem 1.25rem; }
+  .isep         { display: none; }
+  .itime        { font-size: 1.4rem; }
+  .iname        { font-size: 14px; }
+  .iaddr        { font-size: 12px; }
+
+  .pcard        { padding: 1.25rem 1.1rem 1.5rem; border-radius: 0 0 18px 18px; }
+  .poll-eyebrow { font-size: 11px; }
+  .poll-q       { font-size: 1.6rem; }
+
+  .opt          { padding: 12px 13px; gap: 10px; border-radius: 12px; }
+  .opt-emoji    { font-size: 22px; }
+  .opt-lbl      { font-size: 15px; }
+  .opt-desc     { font-size: 13px; }
+  .opt-pct      { font-size: 1.1rem; min-width: 36px; }
+  .opt-radio    { width: 16px; height: 16px; }
+
+  .foot         { margin-top: 12px; padding-top: 10px; }
+  .total-txt    { font-size: 13px; }
+  .live         { font-size: 12px; }
 }
 </style>
 </head>
@@ -465,20 +496,32 @@ function winner(){if(!total())return null;return Object.entries(votes).sort((a,b
 function render(){
   const el=document.getElementById('poll'),w=winner(),hv=userVote!==null;
   el.className='options'+(hv?' voted':'');
+
+  if(hv){
+    // Masquer les résultats — afficher message de confirmation
+    el.innerHTML=`
+      <div style="text-align:center;padding:2rem 1rem 1.5rem;">
+        <div style="font-size:2.8rem;margin-bottom:.75rem;">🎭</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--white);letter-spacing:.04em;margin-bottom:.5rem;">Ton vote a bien été enregistré !</div>
+        <div style="font-size:15px;color:rgba(255,255,255,.7);line-height:1.6;">Les résultats du sondage seront<br>révélés très prochainement ! 👀</div>
+      </div>`;
+    return;
+  }
+
   el.innerHTML=OPTS.map((o,i)=>{
-    const sel=userVote===o.id,win=hv&&o.id===w,p=pct(o.id);
-    return`<div class="opt${sel?' selected':''}${win?' winner':''}" onclick="vote('${o.id}')" style="animation-delay:${.32+i*.06}s">
-      <div class="opt-bar" style="width:${hv?p:0}%"></div>
+    return`<div class="opt" onclick="vote('${o.id}')" style="animation-delay:${.32+i*.06}s">
+      <div class="opt-bar"></div>
       <div class="opt-radio"></div>
       <span class="opt-emoji">${o.emoji}</span>
       <div class="opt-info"><div class="opt-lbl">${o.label}</div><div class="opt-desc">${o.desc}</div></div>
-      <div class="opt-pct">${hv?p+'%':''}</div>
     </div>`;
   }).join('');
 }
 function updateTotal(){
-  const t=total();
-  document.getElementById('total').innerHTML=`<strong>${t}</strong>&nbsp;vote${t>1?'s':''}`;
+  const t=total(), hv=userVote!==null;
+  const el=document.getElementById('total');
+  if(hv){ el.innerHTML=''; return; }
+  el.innerHTML=`<strong>${t}</strong>&nbsp;vote${t>1?'s':''}`;
 }
 
 // Confetti brand colors
