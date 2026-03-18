@@ -375,7 +375,7 @@ body {
 <script>
 // ════════════════════════════════════════════
 const SUPABASE_URL = 'https://uoikhdbekutrdbzjkqpd.supabase.co';
-const SUPABASE_KEY = 'VeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvaWtoZGJla3V0cmRiemprcXBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjgxNDcsImV4cCI6MjA4OTQwNDE0N30.XtlRC6cGvGIjfXN4EGr4wQonKE3U6QK7tyNvVs1noHk_ANON_KEY';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvaWtoZGJla3V0cmRiemprcXBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjgxNDcsImV4cCI6MjA4OTQwNDE0N30.XtlRC6cGvGIjfXN4EGr4wQonKE3U6QK7tyNvVs1noHk';
 // ════════════════════════════════════════════
 
 const OPTS = [
@@ -415,14 +415,12 @@ if(ok){
 }
 
 async function loadVotes(){
-  const {data} = await sb.from('poll_votes').select('*');
-  if(data){
-    data.forEach(r => { votes[r.option_id] = r.count; });
-    loaded = true;
-    render();
-    updateTotal();
-    if(userVote) showConfirmMsg();
-  }
+  const {data, error} = await sb.from('poll_votes').select('*');
+  if(data){ data.forEach(r => { votes[r.option_id] = r.count; }); }
+  loaded = true; // toujours true après la réponse Supabase, même si vide
+  render();
+  updateTotal();
+  if(userVote) showConfirmMsg();
 }
 
 function subscribeRT(){
@@ -437,6 +435,7 @@ async function vote(id){
   if(userVote === id) return;
   const prev = userVote;
   userVote = id;
+  loaded = true; // garantit le highlight même si Supabase est lent
   localStorage.setItem('amarylys_poll_26mars', id);
   if(prev) votes[prev] = Math.max(0, votes[prev] - 1);
   votes[id]++;
