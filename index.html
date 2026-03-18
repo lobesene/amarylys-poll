@@ -388,7 +388,6 @@ const OPTS = [
 
 let votes   = {boomer:0, noir:0, public:0, absurde:0, derision:0};
 let userVote = localStorage.getItem('amarylys_poll_26mars') || null;
-let loaded   = false; // empêche le highlight avant que Supabase ait répondu
 const ok = SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('VOTRE');
 let sb = null;
 
@@ -409,15 +408,13 @@ if(ok){
   subscribeRT();
 }else{
   votes = {boomer:5, noir:9, public:4, absurde:7, derision:3};
-  loaded = true;
   document.getElementById('live-lbl').textContent = '⚙ Config requise';
   render(); updateTotal();
 }
 
 async function loadVotes(){
-  const {data, error} = await sb.from('poll_votes').select('*');
+  const {data} = await sb.from('poll_votes').select('*');
   if(data){ data.forEach(r => { votes[r.option_id] = r.count; }); }
-  loaded = true; // toujours true après la réponse Supabase, même si vide
   render();
   updateTotal();
   if(userVote) showConfirmMsg();
@@ -435,7 +432,6 @@ async function vote(id){
   if(userVote === id) return;
   const prev = userVote;
   userVote = id;
-  loaded = true; // garantit le highlight même si Supabase est lent
   localStorage.setItem('amarylys_poll_26mars', id);
   if(prev) votes[prev] = Math.max(0, votes[prev] - 1);
   votes[id]++;
@@ -456,13 +452,12 @@ function winner(){
 function render(){
   const el  = document.getElementById('poll');
   const w   = winner();
-  const hv  = loaded && userVote !== null;
+  const hv  = userVote !== null;
   el.className = 'options' + (hv ? ' voted' : '');
 
   el.innerHTML = OPTS.map((o,i) => {
-    const sel = loaded && userVote === o.id;
+    const sel = userVote === o.id;
     const win = hv && o.id === w && !sel;
-    const p   = pct(o.id);
     return `<div class="opt${sel?' selected':''}${win?' winner':''}" onclick="vote('${o.id}')" style="animation-delay:${.32+i*.06}s">
       <div class="opt-bar" style="width:0%"></div>
       <div class="opt-radio"></div>
