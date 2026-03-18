@@ -252,9 +252,13 @@ body {
   box-shadow: 0 0 20px rgba(232,192,64,.22);
 }
 .opt.winner {
-  background: rgba(200,152,12,.16);
-  border-color: var(--gold-l);
-  box-shadow: 0 0 24px rgba(232,192,64,.32);
+  background: rgba(255,255,255,.16);
+  border-color: rgba(255,255,255,.70);
+  box-shadow: 0 0 14px rgba(255,255,255,.12);
+}
+.opt.selected.winner {
+  border-color: var(--gold-xl);
+  box-shadow: 0 0 22px rgba(232,192,64,.32);
 }
 
 .opt-bar {
@@ -267,6 +271,9 @@ body {
 .opt.selected .opt-bar {
   background: linear-gradient(90deg, rgba(255,255,255,.13), transparent);
 }
+.opt.winner:not(.selected) .opt-bar {
+  background: linear-gradient(90deg, rgba(255,255,255,.18), transparent);
+}
 
 .opt-radio {
   width:18px; height:18px; border-radius:50%;
@@ -276,14 +283,15 @@ body {
 }
 .opt.selected .opt-radio { border-color: var(--gold-xl); }
 .opt.selected .opt-radio::after { content:''; position:absolute; inset:3px; border-radius:50%; background:var(--gold-xl); }
-.opt.winner  .opt-radio { border-color: var(--gold-l); }
-.opt.winner  .opt-radio::after { content:''; position:absolute; inset:3px; border-radius:50%; background:var(--gold-l); }
+.opt.winner:not(.selected) .opt-radio { border-color: rgba(255,255,255,.6); }
+.opt.winner:not(.selected) .opt-radio::after { content: none; }
 
 .opt-emoji { font-size:24px; z-index:1; line-height:1; }
 
 .opt-info { flex:1; z-index:1; }
 .opt-lbl  { font-size:16px; font-weight:600; color:var(--white); line-height:1.25; }
-.opt.winner .opt-lbl { color:var(--gold-xl); }
+.opt.selected .opt-lbl { color:var(--gold-xl); }
+.opt.winner:not(.selected) .opt-lbl { color:rgba(255,255,255,.95); }
 .opt-desc { font-size:15px; color:rgba(255,255,255,.7); margin-top:3px; }
 
 .opt-pct {
@@ -294,8 +302,8 @@ body {
   opacity:0; transition:opacity .4s .5s;
 }
 .voted .opt-pct      { opacity:1; }
-.opt.selected .opt-pct { color:rgba(255,255,255,.9); }
-.opt.winner   .opt-pct { color:var(--gold-xl); }
+.opt.selected .opt-pct { color:var(--gold-xl); }
+.opt.winner:not(.selected) .opt-pct { color:rgba(255,255,255,.85); }
 
 /* ── Footer ── */
 .foot {
@@ -377,7 +385,7 @@ body {
 
   <div class="pcard">
     <div class="poll-eyebrow">En attendant jeudi...</div>
-    <div class="poll-q">Quel genre d'humour<br>vous fait le plus craquer ?</div>
+    <div class="poll-q">Quel est votre genre d'humour ?</div>
     <div class="options" id="poll"></div>
     <div class="foot">
       <div class="total-txt" id="total">Chargement...</div>
@@ -440,14 +448,14 @@ async function vote(id){
   if(userVote===id) return;
   const prev=userVote; userVote=id;
   localStorage.setItem('amarylys_poll_26mars',id);
-  if(ok){
-    if(prev) await sb.rpc('decrement_vote',{opt:prev});
-    await sb.rpc('increment_vote',{opt:id});
-  }else{
-    if(prev) votes[prev]=Math.max(0,votes[prev]-1);
-    votes[id]++; render(); updateTotal();
-  }
+  if(prev) votes[prev]=Math.max(0,votes[prev]-1);
+  votes[id]++;
+  render(); updateTotal();
   burst();
+  if(ok){
+    if(prev) sb.rpc('decrement_vote',{opt:prev});
+    sb.rpc('increment_vote',{opt:id});
+  }
 }
 
 function total(){return Object.values(votes).reduce((a,b)=>a+b,0);}
