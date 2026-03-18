@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sondage · After-Work Amarylys 🎭</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital@1&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Palette brand exacte ── */
+:root {
+  --b1: #C97080;  /* dusty rose */
+  --b2: #8B3020;  /* burgundy profond */
+  --b3: #8B6068;  /* mauve gris */
+  --b4: #9B3040;  /* rouge bordeaux */
+  --b5: #C89080;  /* nude pêche clair */
+  --b6: #B06070;  /* rose mauve */
+  --b7: #A04858;  /* rose profond */
+  --b8: #C05868;  /* rose vif doux */
+  --b9: #E09888;  /* blush nude */
+  --b10:#A04858;  /* rose bordeaux */
+  --gold:    #C8980C;
+  --gold-l:  #E8C040;
+  --gold-xl: #F5D868;
+  --white:   #FFFFFF;
+  --dark:    #1C0810;
+  --glass-bg:  rgba(255,255,255,0.12);
+  --glass-bg2: rgba(255,255,255,0.17);
+  --glass-bd:  rgba(255,255,255,0.28);
+  --glass-bd2: rgba(255,255,255,0.40);
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 4rem;
+}
+
+/* ── BG exact brand palette ── */
+.bg {
+  position: fixed; inset: 0; z-index: 0;
+  /* top: burgundy → rose profond | bottom: mauve → nude pêche */
+  background:
+    radial-gradient(ellipse 140% 55% at 50%  -5%, #6A1A10 0%,  #8B3020 20%,  transparent 55%),
+    radial-gradient(ellipse  90% 70% at  0% 40%,  #9B3040 0%,  transparent 60%),
+    radial-gradient(ellipse  90% 70% at 100% 50%, #8B6068 0%,  transparent 60%),
+    radial-gradient(ellipse 120% 60% at 40% 100%, #C89080 0%,  transparent 55%),
+    linear-gradient(160deg,
+      #8B3020 0%,
+      #9B3040 18%,
+      #B06070 35%,
+      #C05868 50%,
+      #B06070 65%,
+      #C89080 82%,
+      #E09888 100%
+    );
+}
+
+/* ── Spotlights ── */
+.spots {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 70vh; z-index: 1; pointer-events: none; overflow: hidden;
+}
+.spot {
+  position: absolute; top: 0;
+  transform-origin: top center;
+  animation: swing 5s ease-in-out infinite alternate;
+}
+.spot::before {
+  content: '';
+  position: absolute; top: 0; left: -55px;
+  width: 110px; height: 65vh;
+  background: linear-gradient(180deg, rgba(255,245,220,.14) 0%, transparent 100%);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+.spot:nth-child(1){left:10%; animation-delay:0s;   animation-duration:4.5s;}
+.spot:nth-child(2){left:28%; animation-delay:.8s;  animation-duration:5.2s;}
+.spot:nth-child(3){left:50%; animation-delay:1.6s; animation-duration:4.8s;}
+.spot:nth-child(4){left:70%; animation-delay:.4s;  animation-duration:5.5s;}
+.spot:nth-child(5){left:88%; animation-delay:1.2s; animation-duration:4.2s;}
+@keyframes swing {
+  from { transform: rotate(-7deg); opacity:.55; }
+  to   { transform: rotate(7deg);  opacity:1;   }
+}
+
+/* ── Sparkles ── */
+.sparkles { position:fixed; inset:0; z-index:1; pointer-events:none; }
+.sp {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--gold-xl);
+  animation: twinkle var(--d) ease-in-out infinite;
+  opacity: 0;
+}
+@keyframes twinkle {
+  0%,100%{ opacity:0; transform:scale(.5); }
+  50%    { opacity:.85; transform:scale(1.5); }
+}
+
+#confetti { position:fixed; inset:0; pointer-events:none; z-index:99; }
+
+/* ── Layout ── */
+.wrap {
+  position: relative; z-index: 10;
+  width: 100%; max-width: 480px;
+  animation: pageIn .8s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes pageIn {
+  from { opacity:0; transform:translateY(36px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── Header ── */
+.hcard {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid var(--glass-bd);
+  border-bottom: none;
+  border-radius: 24px 24px 0 0;
+  padding: 2rem 2rem 1.4rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+/* gold shimmer top edge */
+.hcard::before {
+  content: '';
+  position: absolute; top:0; left:15%; right:15%; height:1.5px;
+  background: linear-gradient(90deg, transparent, var(--gold-xl), transparent);
+}
+
+.brand-script {
+  display: block;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: 5rem;
+  color: var(--white);
+  letter-spacing: .02em;
+  line-height: 1;
+  text-shadow: 0 2px 22px rgba(0,0,0,.4);
+  margin-bottom: .3rem;
+}
+.after-work {
+  display: block;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  color: rgba(255,255,255,.95);
+  letter-spacing: .18em;
+  text-shadow: 0 2px 12px rgba(0,0,0,.3);
+  margin-bottom: 1.1rem;
+}
+.date-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.date-box {
+  background: var(--gold);
+  border: 1.5px solid var(--gold-xl);
+  border-radius: 8px;
+  padding: 6px 18px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.9rem;
+  color: var(--white);
+  letter-spacing: .08em;
+  line-height: 1;
+  text-shadow: 0 1px 4px rgba(0,0,0,.35);
+  box-shadow: 0 4px 16px rgba(200,152,12,.35);
+}
+
+/* ── Info strip ── */
+.info-strip {
+  background: rgba(28, 8, 16, .52);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-left: 1px solid var(--glass-bd);
+  border-right: 1px solid var(--glass-bd);
+  padding: 1.1rem 1.8rem;
+  display: flex; gap: 1.2rem; align-items: center;
+}
+.info-bl { flex:1; }
+.itime {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.9rem; color: var(--gold-l);
+  letter-spacing: .06em; line-height:1;
+  text-shadow: 0 0 14px rgba(232,192,64,.45);
+}
+.iname  { font-size:15px; font-weight:600; color:var(--white); line-height:1.3; margin:4px 0 3px; }
+.iaddr  { font-size:13px; color:rgba(255,255,255,.6); }
+.isep   { width:1px; align-self:stretch; background:rgba(255,255,255,.16); }
+
+/* ── Poll card ── */
+.pcard {
+  background: var(--glass-bg2);
+  backdrop-filter: blur(22px) saturate(1.7);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+  border: 1px solid var(--glass-bd2);
+  border-top: none;
+  border-radius: 0 0 24px 24px;
+  padding: 1.6rem 1.8rem 1.8rem;
+  position: relative;
+  overflow: hidden;
+}
+.pcard::after {
+  content: '';
+  position: absolute; bottom:0; left:20%; right:20%; height:1px;
+  background: linear-gradient(90deg, transparent, rgba(255,215,100,.35), transparent);
+}
+
+.poll-eyebrow {
+  font-size:12px; font-weight:600;
+  letter-spacing:.15em; text-transform:uppercase;
+  color:rgba(255,255,255,.75);
+  text-align:center; margin-bottom:6px;
+}
+.poll-q {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size:2rem; letter-spacing:.04em; line-height:1.2;
+  color:var(--white);
+  text-align:center;
+  text-shadow: 0 2px 12px rgba(0,0,0,.35);
+  margin-bottom:1.3rem;
+}
+
+/* ── Options ── */
+.options { display:flex; flex-direction:column; gap:8px; }
+
+.opt {
+  position: relative;
+  display: flex; align-items:center; gap:11px;
+  padding: 13px 16px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.20);
+  border-radius: 14px;
+  cursor: pointer; overflow: hidden;
+  transition: background .2s, border-color .2s, transform .15s;
+  animation: fadeUp .45s ease both;
+}
+.opt:hover {
+  background: rgba(255,255,255,.18);
+  border-color: rgba(255,255,255,.40);
+  transform: translateX(4px);
+}
+.opt.selected {
+  background: rgba(255,255,255,.20);
+  border-color: var(--gold-xl);
+  box-shadow: 0 0 20px rgba(232,192,64,.22);
+}
+.opt.winner {
+  background: rgba(200,152,12,.16);
+  border-color: var(--gold-l);
+  box-shadow: 0 0 24px rgba(232,192,64,.32);
+}
+
+.opt-bar {
+  position: absolute; left:0; top:0; bottom:0;
+  background: linear-gradient(90deg, rgba(232,192,64,.15), transparent);
+  width: 0%;
+  transition: width .75s cubic-bezier(.16,1,.3,1);
+  pointer-events: none; border-radius:14px 0 0 14px;
+}
+.opt.selected .opt-bar {
+  background: linear-gradient(90deg, rgba(255,255,255,.13), transparent);
+}
+
+.opt-radio {
+  width:18px; height:18px; border-radius:50%;
+  border:2px solid rgba(255,255,255,.38);
+  flex-shrink:0; position:relative;
+  transition:border-color .2s; z-index:1;
+}
+.opt.selected .opt-radio { border-color: var(--gold-xl); }
+.opt.selected .opt-radio::after { content:''; position:absolute; inset:3px; border-radius:50%; background:var(--gold-xl); }
+.opt.winner  .opt-radio { border-color: var(--gold-l); }
+.opt.winner  .opt-radio::after { content:''; position:absolute; inset:3px; border-radius:50%; background:var(--gold-l); }
+
+.opt-emoji { font-size:24px; z-index:1; line-height:1; }
+
+.opt-info { flex:1; z-index:1; }
+.opt-lbl  { font-size:16px; font-weight:600; color:var(--white); line-height:1.25; }
+.opt.winner .opt-lbl { color:var(--gold-xl); }
+.opt-desc { font-size:15px; color:rgba(255,255,255,.7); margin-top:3px; }
+
+.opt-pct {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.3rem; letter-spacing:.04em;
+  color:rgba(255,255,255,.48);
+  z-index:1; min-width:42px; text-align:right;
+  opacity:0; transition:opacity .4s .5s;
+}
+.voted .opt-pct      { opacity:1; }
+.opt.selected .opt-pct { color:rgba(255,255,255,.9); }
+.opt.winner   .opt-pct { color:var(--gold-xl); }
+
+/* ── Footer ── */
+.foot {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:14px; padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.14);
+}
+.total-txt { font-size:14px; color:rgba(255,255,255,.6); font-weight:500; }
+.total-txt strong { color:var(--white); }
+.live {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:13px; font-weight:600; letter-spacing:.1em;
+  text-transform:uppercase; color:rgba(255,255,255,.75);
+}
+.live-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--gold-l);
+  box-shadow:0 0 7px var(--gold-l);
+  animation:blink 1.4s ease-in-out infinite;
+}
+@keyframes blink {
+  0%,100%{ opacity:1; transform:scale(1);   }
+  50%    { opacity:.3; transform:scale(.6); }
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0);    }
+}
+.opt:nth-child(1){animation-delay:.32s}
+.opt:nth-child(2){animation-delay:.38s}
+.opt:nth-child(3){animation-delay:.44s}
+.opt:nth-child(4){animation-delay:.50s}
+.opt:nth-child(5){animation-delay:.56s}
+
+@media(max-width:440px){
+  .brand-script{font-size:3.8rem}
+  .after-work{font-size:2.4rem}
+  .info-strip{flex-direction:column;gap:.7rem}
+  .isep{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="spots">
+  <div class="spot"></div><div class="spot"></div><div class="spot"></div>
+  <div class="spot"></div><div class="spot"></div>
+</div>
+<div class="sparkles" id="sparkles"></div>
+<canvas id="confetti"></canvas>
+
+<div class="wrap">
+
+  <div class="hcard">
+    <span class="brand-script">Amarylys</span>
+    <span class="after-work">After-Work</span>
+    <div class="date-tag">
+      <div class="date-box">26</div>
+      <div class="date-box">Mars</div>
+      <div class="date-box">2026</div>
+    </div>
+  </div>
+
+  <div class="info-strip">
+    <div class="info-bl">
+      <div class="itime">19H00</div>
+      <div class="iname">Golden Comedy Club</div>
+      <div class="iaddr">📍 36 rue Dalayrac, 75002 Paris</div>
+    </div>
+    <div class="isep"></div>
+    <div class="info-bl">
+      <div class="itime">20H30</div>
+      <div class="iname">Dîner Rétro</div>
+      <div class="iaddr">Ambiance années 90 · Cool kids only 🕹️</div>
+    </div>
+  </div>
+
+  <div class="pcard">
+    <div class="poll-eyebrow">En attendant jeudi...</div>
+    <div class="poll-q">Quel genre d'humour<br>vous fait le plus craquer ?</div>
+    <div class="options" id="poll"></div>
+    <div class="foot">
+      <div class="total-txt" id="total">Chargement...</div>
+      <div class="live"><div class="live-dot"></div><span id="live-lbl">En direct</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════
+const SUPABASE_URL = 'https://uoikhdbekutrdbzjkqpd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvaWtoZGJla3V0cmRiemprcXBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjgxNDcsImV4cCI6MjA4OTQwNDE0N30.XtlRC6cGvGIjfXN4EGr4wQonKE3U6QK7tyNvVs1noHk';
+// ════════════════════════════════════════════
+
+const OPTS = [
+  {id:'boomer',   emoji:'👴', label:'Humour de boomer',    desc:'Les blagues que tes parents sortent aux repas de famille'},
+  {id:'noir',     emoji:'🖤', label:'Humour noir',          desc:"Plus c'est sombre, plus tu ris"},
+  {id:'public',   emoji:'😄', label:'Bon public',           desc:"Tu ris à tout et c'est un compliment"},
+  {id:'absurde',  emoji:'🌀', label:'Humour absurde',       desc:'Aucun sens, mais tellement drôle'},
+  {id:'derision', emoji:'😅', label:'Humour auto-dérision', desc:'Rire de soi avec les autres'},
+];
+
+let votes = {boomer:0,noir:0,public:0,absurde:0,derision:0};
+let userVote = localStorage.getItem('amarylys_poll_26mars') || null;
+const ok = SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('VOTRE');
+let sb = null;
+
+// Sparkles
+(function(){
+  const c = document.getElementById('sparkles');
+  for(let i=0;i<30;i++){
+    const s=document.createElement('div'); s.className='sp';
+    const sz=1.5+Math.random()*3;
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${sz}px;height:${sz}px;--d:${1.8+Math.random()*4}s;animation-delay:${Math.random()*5}s;`;
+    c.appendChild(s);
+  }
+})();
+
+if(ok){
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  loadVotes(); subscribeRT();
+}else{
+  votes={boomer:5,noir:9,public:4,absurde:7,derision:3};
+  document.getElementById('live-lbl').textContent='⚙ Config requise';
+  render(); updateTotal();
+}
+
+async function loadVotes(){
+  const {data}=await sb.from('poll_votes').select('*');
+  if(data){data.forEach(r=>{votes[r.option_id]=r.count});render();updateTotal();}
+}
+function subscribeRT(){
+  sb.channel('poll').on('postgres_changes',{event:'UPDATE',schema:'public',table:'poll_votes'},p=>{
+    votes[p.new.option_id]=p.new.count; render(); updateTotal();
+  }).subscribe();
+}
+
+async function vote(id){
+  if(userVote===id) return;
+  const prev=userVote; userVote=id;
+  localStorage.setItem('amarylys_poll_26mars',id);
+  if(ok){
+    if(prev) await sb.rpc('decrement_vote',{opt:prev});
+    await sb.rpc('increment_vote',{opt:id});
+  }else{
+    if(prev) votes[prev]=Math.max(0,votes[prev]-1);
+    votes[id]++; render(); updateTotal();
+  }
+  burst();
+}
+
+function total(){return Object.values(votes).reduce((a,b)=>a+b,0);}
+function pct(id){const t=total();return t===0?0:Math.round(votes[id]/t*100);}
+function winner(){if(!total())return null;return Object.entries(votes).sort((a,b)=>b[1]-a[1])[0][0];}
+
+function render(){
+  const el=document.getElementById('poll'),w=winner(),hv=userVote!==null;
+  el.className='options'+(hv?' voted':'');
+  el.innerHTML=OPTS.map((o,i)=>{
+    const sel=userVote===o.id,win=hv&&o.id===w,p=pct(o.id);
+    return`<div class="opt${sel?' selected':''}${win?' winner':''}" onclick="vote('${o.id}')" style="animation-delay:${.32+i*.06}s">
+      <div class="opt-bar" style="width:${hv?p:0}%"></div>
+      <div class="opt-radio"></div>
+      <span class="opt-emoji">${o.emoji}</span>
+      <div class="opt-info"><div class="opt-lbl">${o.label}</div><div class="opt-desc">${o.desc}</div></div>
+      <div class="opt-pct">${hv?p+'%':''}</div>
+    </div>`;
+  }).join('');
+}
+function updateTotal(){
+  const t=total();
+  document.getElementById('total').innerHTML=`<strong>${t}</strong>&nbsp;vote${t>1?'s':''}`;
+}
+
+// Confetti brand colors
+const cv=document.getElementById('confetti'),cx=cv.getContext('2d');
+let pp=[];
+function rsz(){cv.width=innerWidth;cv.height=innerHeight;} rsz(); window.addEventListener('resize',rsz);
+function burst(){
+  const cols=['#C97080','#8B3020','#8B6068','#9B3040','#C89080','#B06070','#E8C040','#F5D868','#ffffff'];
+  for(let i=0;i<100;i++) pp.push({
+    x:innerWidth/2, y:innerHeight*.35,
+    vx:(Math.random()-.5)*18, vy:(Math.random()-1.6)*15,
+    r:Math.random()*5+2,
+    color:cols[~~(Math.random()*cols.length)],
+    alpha:1, spin:(Math.random()-.5)*.35, angle:0, rect:Math.random()>.4
+  });
+  requestAnimationFrame(loop);
+}
+function loop(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  pp=pp.filter(p=>p.alpha>.01);
+  pp.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=.42;p.alpha-=.015;p.angle+=p.spin;
+    cx.save();cx.globalAlpha=p.alpha;cx.fillStyle=p.color;
+    cx.translate(p.x,p.y);cx.rotate(p.angle);
+    p.rect?cx.fillRect(-p.r,-p.r/2,p.r*2,p.r):(cx.beginPath(),cx.arc(0,0,p.r,0,Math.PI*2),cx.fill());
+    cx.restore();
+  });
+  if(pp.length) requestAnimationFrame(loop); else cx.clearRect(0,0,cv.width,cv.height);
+}
+
+render();
+</script>
+
+<!--
+════════════════════════════════════════════
+SQL SUPABASE — colle dans SQL Editor → Run
+════════════════════════════════════════════
+
+CREATE TABLE poll_votes (
+  option_id TEXT PRIMARY KEY,
+  count INTEGER DEFAULT 0
+);
+INSERT INTO poll_votes VALUES
+  ('boomer',0),('noir',0),('public',0),('absurde',0),('derision',0);
+
+ALTER TABLE poll_votes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "read"   ON poll_votes FOR SELECT USING (true);
+CREATE POLICY "update" ON poll_votes FOR UPDATE USING (true);
+
+CREATE OR REPLACE FUNCTION increment_vote(opt text)
+RETURNS void LANGUAGE sql SECURITY DEFINER AS $$
+  UPDATE poll_votes SET count = count + 1 WHERE option_id = opt;
+$$;
+CREATE OR REPLACE FUNCTION decrement_vote(opt text)
+RETURNS void LANGUAGE sql SECURITY DEFINER AS $$
+  UPDATE poll_votes SET count = GREATEST(count - 1, 0) WHERE option_id = opt;
+$$;
+
+════════════════════════════════════════════
+-->
+
+</body>
+</html>
