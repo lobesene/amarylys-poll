@@ -338,6 +338,10 @@ body {
   from { opacity:0; transform:translateY(14px); }
   to   { opacity:1; transform:translateY(0);    }
 }
+@keyframes msgPop {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0);   }
+}
 .opt:nth-child(1){animation-delay:.32s}
 .opt:nth-child(2){animation-delay:.38s}
 .opt:nth-child(3){animation-delay:.44s}
@@ -481,8 +485,7 @@ async function vote(id){
   localStorage.setItem('amarylys_poll_26mars',id);
   if(prev) votes[prev]=Math.max(0,votes[prev]-1);
   votes[id]++;
-  render(); updateTotal();
-  burst();
+  render(); updateTotal(); showConfirmMsg(); burst();
   if(ok){
     if(prev) sb.rpc('decrement_vote',{opt:prev});
     sb.rpc('increment_vote',{opt:id});
@@ -497,33 +500,30 @@ function render(){
   const el=document.getElementById('poll'),w=winner(),hv=userVote!==null;
   el.className='options'+(hv?' voted':'');
 
-  if(hv){
-    // Masquer les résultats — afficher message de confirmation
-    el.innerHTML=`
-      <div style="text-align:center;padding:2rem 1rem 1.5rem;">
-        <div style="font-size:2.8rem;margin-bottom:.75rem;">🎭</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--white);letter-spacing:.04em;margin-bottom:.5rem;">Ton vote a bien été enregistré !</div>
-        <div style="font-size:15px;color:rgba(255,255,255,.7);line-height:1.6;">Les résultats du sondage seront<br>révélés très prochainement ! 👀</div>
-      </div>`;
-    return;
-  }
-
   el.innerHTML=OPTS.map((o,i)=>{
-    return`<div class="opt" onclick="vote('${o.id}')" style="animation-delay:${.32+i*.06}s">
-      <div class="opt-bar"></div>
+    const sel=userVote===o.id,win=hv&&o.id===w&&!sel,p=pct(o.id);
+    return`<div class="opt${sel?' selected':''}${win?' winner':''}" onclick="vote('${o.id}')" style="animation-delay:${.32+i*.06}s">
+      <div class="opt-bar" style="width:${hv?p:0}%"></div>
       <div class="opt-radio"></div>
       <span class="opt-emoji">${o.emoji}</span>
       <div class="opt-info"><div class="opt-lbl">${o.label}</div><div class="opt-desc">${o.desc}</div></div>
     </div>`;
   }).join('');
 }
-function updateTotal(){
-  const t=total(), hv=userVote!==null;
-  const el=document.getElementById('total');
-  if(hv){ el.innerHTML=''; return; }
-  el.innerHTML=`<strong>${t}</strong>&nbsp;vote${t>1?'s':''}`;
-}
 
+function showConfirmMsg(){
+  const existing = document.getElementById('vote-msg');
+  if(existing) existing.remove();
+  const msg = document.createElement('div');
+  msg.id = 'vote-msg';
+  msg.style.cssText='text-align:center;padding:.9rem 0 .1rem;font-size:13px;color:rgba(255,255,255,.7);line-height:1.7;animation:msgPop .4s cubic-bezier(.16,1,.3,1) both;';
+  msg.innerHTML='✅ Ton vote a bien été enregistré<br><em style="color:rgba(255,255,255,.5)">Les résultats du sondage seront révélés très prochainement !</em>';
+  document.getElementById('poll').after(msg);
+}
+function updateTotal(){
+  const t=total();
+  document.getElementById('total').innerHTML=`<strong>${t}</strong>&nbsp;vote${t>1?'s':''}`;
+}
 // Confetti brand colors
 const cv=document.getElementById('confetti'),cx=cv.getContext('2d');
 let pp=[];
