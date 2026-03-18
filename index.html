@@ -445,7 +445,7 @@ const OPTS = [
 ];
 
 let votes = {boomer:0,noir:0,public:0,absurde:0,derision:0};
-let userVote = null;
+let userVote = localStorage.getItem('amarylys_poll_26mars') || null;
 const ok = SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('VOTRE');
 let sb = null;
 
