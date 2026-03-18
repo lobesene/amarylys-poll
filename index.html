@@ -438,8 +438,12 @@ async function vote(id){
   votes[id]++;
   render(); updateTotal(); showConfirmMsg(); burst();
   if(ok){
-    if(prev) sb.rpc('decrement_vote', {opt: prev});
-    sb.rpc('increment_vote', {opt: id});
+    if(prev){
+      const prevCount = Math.max(0, votes[prev]);
+      await sb.from('poll_votes').update({count: prevCount}).eq('option_id', prev);
+    }
+    const newCount = votes[id];
+    await sb.from('poll_votes').update({count: newCount}).eq('option_id', id);
   }
 }
 
